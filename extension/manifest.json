@@ -1,0 +1,11 @@
+{
+  "manifest_version": 3,
+  "name": "Phalanx",
+  "version": "0.1",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA2aAcv3xkshEB8JJqDr/MOE6JYDjw3Tb298lX1FaNqPtjWz6zFfkBUqVxCzoFYxr7wKjxz4Lm9ffTNh+/uDZekEisgILBkfz1uRzrgwy5G/PCDPuC2mPckoGK204PbzheGNKLy3PldsEZFQpb+sm1nccXpxrqINIlqfxwyCy9ibloxtZNHsSlCfCTb2zwPhq2OfohHR8QfPjsAcnqzdk5r9CQpzeRBMrfChKPWyxFRhSaVgY53z9QQhiWk+QXkSS2tqvZJgYuwpsoWdCw2ffZ6iYADyJO2W06XuWIIrZ3h5iuySR1zr8N8qRQxq8SFFFe82TLpW2xmEzcftckG+bzEQIDAQAB",
+  "permissions": ["nativeMessaging", "scripting", "tabs"],
+  "host_permissions": ["http://localhost:4711/*"],
+  "background": {
+    "service_worker": "background.js"
+  }
+}

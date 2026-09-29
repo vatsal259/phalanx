@@ -1,0 +1,7 @@
+target/
+chrome-profile/
+.idea/
+.DS_Store
+login.properties
+keycloak-local.properties
+.env

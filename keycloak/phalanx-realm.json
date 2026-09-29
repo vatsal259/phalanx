@@ -1,0 +1,70 @@
+{
+  "realm": "phalanx",
+  "enabled": true,
+  "sslRequired": "none",
+  "registrationAllowed": false,
+  "roles": {
+    "realm": [
+      {
+        "name": "agent",
+        "description": "May request a sign-in"
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "phalanx-agent",
+      "enabled": true,
+      "publicClient": true,
+      "protocol": "openid-connect",
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "fullScopeAllowed": true,
+      "redirectUris": ["http://localhost:4711/*"],
+      "defaultClientScopes": ["web-origins", "acr", "roles", "profile", "basic"],
+      "protocolMappers": [
+        {
+          "name": "phalanx-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": {
+            "included.custom.audience": "phalanx-broker",
+            "access.token.claim": "true",
+            "id.token.claim": "false"
+          }
+        },
+        {
+          "name": "phalanx-role",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "config": {
+            "claim.name": "role",
+            "jsonType.label": "String",
+            "multivalued": "true",
+            "access.token.claim": "true",
+            "id.token.claim": "false",
+            "userinfo.token.claim": "false"
+          }
+        }
+      ]
+    }
+  ],
+  "users": [
+    {
+      "username": "agent",
+      "enabled": true,
+      "email": "agent@localhost",
+      "emailVerified": true,
+      "firstName": "Agent",
+      "lastName": "User",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "change-me",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["agent"]
+    }
+  ]
+}

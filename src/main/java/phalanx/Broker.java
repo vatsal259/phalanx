@@ -43,15 +43,35 @@ public final class Broker {
     }
     saved = LoginStore.load();
     installNativeHost();
-    acceptExtension();
-    HttpServer server = HttpServer.create(new InetSocketAddress(InetAddress.getLoopbackAddress(), Config.HTTP_PORT), 0);
-    server.createContext("/", Broker::handle);
-    ExecutorService pool = Executors.newFixedThreadPool(4);
-    server.setExecutor(pool);
-    server.start();
-    System.err.println("Broker ready at http://localhost:" + Config.HTTP_PORT + "/login.html");
-    System.err.println("In another terminal, from this folder: java -jar target/phalanx.jar agent");
-    Thread.currentThread().join();
+    try (ServerSocket extensionServer = bindExtensionServer()) {
+      Thread acceptor = startAcceptor(extensionServer);
+      HttpServer server = HttpServer.create(new InetSocketAddress(InetAddress.getLoopbackAddress(), Config.HTTP_PORT), 0);
+      server.createContext("/", Broker::handle);
+      ExecutorService pool = Executors.newFixedThreadPool(4);
+      server.setExecutor(pool);
+      server.start();
+      System.err.println("Broker ready at http://localhost:" + Config.HTTP_PORT + "/login.html");
+      System.err.println("In another terminal, from this folder: java -jar target/phalanx.jar agent");
+      try {
+        Thread.currentThread().join();
+      } finally {
+        server.stop(0);
+        pool.shutdownNow();
+        acceptor.interrupt();
+        closeBridge();
+      }
+    }
+  }
+
+  private static ServerSocket bindExtensionServer() throws IOException {
+    ServerSocket server = new ServerSocket();
+    try {
+      server.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), Config.HOST_PORT));
+      return server;
+    } catch (IOException exception) {
+      server.close();
+      throw exception;
+    }
   }
 
   private static void handle(HttpExchange exchange) throws IOException {
@@ -173,11 +193,9 @@ public final class Broker {
     send(exchange, 200, "text/html; charset=utf-8", html.getBytes(StandardCharsets.UTF_8));
   }
 
-  private static void acceptExtension() throws IOException {
-    ServerSocket server = new ServerSocket();
-    server.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), Config.HOST_PORT));
+  private static Thread startAcceptor(ServerSocket server) {
     Thread acceptor = new Thread(() -> {
-      while (!server.isClosed()) {
+      while (!server.isClosed() && !Thread.currentThread().isInterrupted()) {
         try {
           Socket socket = server.accept();
           socket.setTcpNoDelay(true);
@@ -202,6 +220,22 @@ public final class Broker {
     }, "extension-accept");
     acceptor.setDaemon(true);
     acceptor.start();
+    return acceptor;
+  }
+
+  private static void closeBridge() {
+    synchronized (BRIDGE) {
+      if (bridgeSocket != null) {
+        try {
+          bridgeSocket.close();
+        } catch (IOException ignored) {
+          // The broker is already stopping.
+        }
+        bridgeSocket = null;
+        bridgeReader = null;
+        bridgeWriter = null;
+      }
+    }
   }
 
   private static void installNativeHost() throws IOException {
